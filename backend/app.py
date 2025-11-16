@@ -12,7 +12,7 @@ from io import BytesIO
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('npx neonctl@latest init')
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET', 'segredo-super-secreto')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET', '#FullksnoFosco@paidois1600')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db.init_app(app)
