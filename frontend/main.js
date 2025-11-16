@@ -1,6 +1,6 @@
 class ContabilidadeApp {
     constructor() {
-        this.apiBase = 'https://your-render-app.onrender.com/api';
+        this.apiBase = 'https://contabilidade-app-cgxt.onrender.com';
         this.token = localStorage.getItem('token');
         this.user = JSON.parse(localStorage.getItem('user') || '{}');
         this.currentSheetId = null;
