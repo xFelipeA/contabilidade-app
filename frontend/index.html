@@ -1,1 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sistema Contábil</title>
+  <script src="main.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Painel da Contabilidade</h1>
 
+  <div id="login">
+    <input id="email" placeholder="E-mail">
+    <input id="password" type="password" placeholder="Senha">
+    <button onclick="login()">Entrar</button>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <h2>Bem-vindo!</h2>
+    <button onclick="listarClientes()">Listar Clientes</button>
+
+    <div id="clientes"></div>
+  </div>
+</body>
+</html>
