@@ -1,9 +1,10 @@
 class ContabilidadeApp {
     constructor() {
-        this.apiBase = 'https://contabilidade-app-cgxt.onrender.com';
+        this.apiBase = 'https://contabilidade-app-cgxt.onrender.com'; // ATUALIZE ESTA URL!
         this.token = localStorage.getItem('token');
         this.user = JSON.parse(localStorage.getItem('user') || '{}');
         this.currentSheetId = null;
+        this.notificationsInterval = null;
         this.init();
     }
 
@@ -37,6 +38,10 @@ class ContabilidadeApp {
         if (['admin', 'gerente'].includes(this.user.role)) {
             document.getElementById('admin-menu').style.display = 'block';
         }
+        
+        // Iniciar sistema de notificações
+        this.setupNotifications();
+        this.loadNotifications();
     }
 
     setupEventListeners() {
@@ -72,6 +77,94 @@ class ContabilidadeApp {
         document.getElementById('user-form').addEventListener('submit', (e) => this.saveUser(e));
     }
 
+    // Notificações
+    setupNotifications() {
+        document.getElementById('notifications-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleNotifications();
+        });
+
+        // Fechar notificações ao clicar fora
+        document.addEventListener('click', () => {
+            this.hideNotifications();
+        });
+
+        // Carregar notificações a cada 30 segundos
+        this.notificationsInterval = setInterval(() => {
+            if (this.token) {
+                this.loadNotifications();
+            }
+        }, 30000);
+
+        // Carregar notificações inicialmente
+        this.loadNotifications();
+    }
+
+    toggleNotifications() {
+        const dropdown = document.getElementById('notifications-dropdown');
+        dropdown.classList.toggle('show');
+    }
+
+    hideNotifications() {
+        const dropdown = document.getElementById('notifications-dropdown');
+        dropdown.classList.remove('show');
+    }
+
+    async loadNotifications() {
+        try {
+            const response = await this.apiCall('/notifications');
+            const notifications = await response.json();
+            
+            this.updateNotificationsUI(notifications);
+        } catch (error) {
+            console.error('Erro ao carregar notificações:', error);
+        }
+    }
+
+    updateNotificationsUI(notifications) {
+        const list = document.getElementById('notifications-list');
+        const count = document.getElementById('notification-count');
+        
+        const unreadCount = notifications.filter(n => !n.read).length;
+        count.textContent = unreadCount;
+        count.style.display = unreadCount > 0 ? 'block' : 'none';
+        
+        if (notifications.length === 0) {
+            list.innerHTML = '<div class="notification-item"><em>Nenhuma notificação</em></div>';
+            return;
+        }
+        
+        list.innerHTML = notifications.map(notif => `
+            <div class="notification-item ${notif.read ? '' : 'unread'}" data-id="${notif.id}">
+                <div class="notification-message">${notif.message}</div>
+                <div class="notification-time">
+                    ${new Date(notif.created_at).toLocaleDateString()} 
+                    ${new Date(notif.created_at).toLocaleTimeString()}
+                </div>
+                ${!notif.read ? `
+                    <div class="notification-actions">
+                        <button class="mark-read-btn" onclick="app.markNotificationRead(${notif.id})">
+                            Marcar como lida
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    async markNotificationRead(notificationId) {
+        try {
+            await this.apiCall(`/notifications/${notificationId}/read`, {
+                method: 'PUT'
+            });
+            
+            // Recarregar notificações
+            this.loadNotifications();
+        } catch (error) {
+            this.showMessage('Erro ao marcar notificação como lida', 'error');
+        }
+    }
+
     async handleLogin(e) {
         e.preventDefault();
         const username = document.getElementById('username').value;
@@ -103,6 +196,9 @@ class ContabilidadeApp {
     }
 
     logout() {
+        if (this.notificationsInterval) {
+            clearInterval(this.notificationsInterval);
+        }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         this.token = null;
@@ -444,7 +540,6 @@ class ContabilidadeApp {
             paymentsList.innerHTML = '<p>Carregando...</p>';
 
             // Por simplicidade, mostramos todos os pagamentos
-            // Em produção, você pode querer filtrar por cliente
             let allPayments = [];
             for (const client of clients) {
                 const paymentsResponse = await this.apiCall(`/clients/${client.id}/payments`);
@@ -513,7 +608,6 @@ class ContabilidadeApp {
 
         try {
             // Em produção, você teria uma rota específica para usuários
-            // Por enquanto, vamos simular carregando apenas o usuário atual
             const tbody = document.getElementById('users-tbody');
             tbody.innerHTML = `
                 <tr>
@@ -565,7 +659,6 @@ class ContabilidadeApp {
             const clients = await clientsResponse.json();
             
             document.getElementById('total-clients').textContent = clients.length;
-            // Em produção, você carregaria os outros dados também
         } catch (error) {
             console.error('Erro ao carregar dashboard:', error);
         }
