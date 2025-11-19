@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from models import db, User, Client, Spreadsheet, Document, Payment
+from models import db, User, Client, Spreadsheet, Document, Payment, Notification
 import bcrypt
 import os
 from datetime import datetime, timedelta
@@ -11,19 +11,46 @@ from reportlab.lib.pagesizes import letter
 from io import BytesIO
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('npx neonctl@latest init')
-app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET', '#FullksnoFosco@paidois1600')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET', 'segredo-super-secreto')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db.init_app(app)
 jwt = JWTManager(app)
 CORS(app)
 
+# Função auxiliar para criar notificações
+def create_notification(user_id, message, type, related_id=None):
+    notification = Notification(
+        user_id=user_id,
+        message=message,
+        type=type,
+        related_id=related_id
+    )
+    db.session.add(notification)
+    db.session.commit()
+
 # Inicializar banco de dados
 with app.app_context():
     db.create_all()
-    # Criar usuário admin padrão se não existir
-    if not User.query.filter_by(username='admin').first():
+    
+    # Criar usuário dev padrão se não existir
+    dev_user = User.query.filter_by(username='dev').first()
+    if not dev_user:
+        hashed_password = bcrypt.hashpw('dev123456'.encode('utf-8'), bcrypt.gensalt())
+        dev_user = User(
+            username='dev',
+            password=hashed_password.decode('utf-8'),
+            role='admin',  # Dev tem acesso total
+            email='dev@contabilidade.com'
+        )
+        db.session.add(dev_user)
+        db.session.commit()
+        print("✅ Usuário dev criado com sucesso!")
+    
+    # Criar admin se não existir (agora opcional)
+    admin_user = User.query.filter_by(username='admin').first()
+    if not admin_user:
         hashed_password = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt())
         admin_user = User(
             username='admin',
@@ -33,6 +60,7 @@ with app.app_context():
         )
         db.session.add(admin_user)
         db.session.commit()
+        print("✅ Admin criado com sucesso!")
 
 # Rotas de Autenticação
 @app.route('/api/login', methods=['POST'])
@@ -77,6 +105,17 @@ def register():
     
     db.session.add(user)
     db.session.commit()
+    
+    # Notificar admins sobre novo usuário
+    admins = User.query.filter_by(role='admin').all()
+    for admin in admins:
+        if admin.id != current_user['id']:
+            create_notification(
+                admin.id,
+                f"Usuário {current_user['username']} criou uma nova conta para {data.get('username')} ({data.get('role')})",
+                'user_created',
+                user.id
+            )
     
     return jsonify({'message': 'Usuário criado com sucesso'}), 201
 
@@ -171,12 +210,25 @@ def create_spreadsheet():
 def update_spreadsheet(sheet_id):
     spreadsheet = Spreadsheet.query.get_or_404(sheet_id)
     data = request.get_json()
+    current_user = get_jwt_identity()
     
     spreadsheet.name = data.get('name', spreadsheet.name)
     spreadsheet.data = json.dumps(data.get('data', []))
     spreadsheet.updated_at = datetime.utcnow()
     
     db.session.commit()
+    
+    # Enviar notificação para admins sobre atualização
+    admins = User.query.filter_by(role='admin').all()
+    for admin in admins:
+        if admin.id != current_user['id']:  # Não notificar a si mesmo
+            create_notification(
+                admin.id,
+                f"Usuário {current_user['username']} atualizou a planilha '{spreadsheet.name}'",
+                'spreadsheet_update',
+                sheet_id
+            )
+    
     return jsonify({'message': 'Planilha atualizada com sucesso'})
 
 # Rotas de Documentos
@@ -299,6 +351,29 @@ def get_client_payments(client_id):
         'status': payment.status,
         'created_at': payment.created_at.isoformat()
     } for payment in payments])
+
+# Rotas de Notificação
+@app.route('/api/notifications', methods=['GET'])
+@jwt_required()
+def get_notifications():
+    current_user = get_jwt_identity()
+    notifications = Notification.query.filter_by(user_id=current_user['id']).order_by(Notification.created_at.desc()).limit(50).all()
+    
+    return jsonify([{
+        'id': notif.id,
+        'message': notif.message,
+        'type': notif.type,
+        'read': notif.read,
+        'created_at': notif.created_at.isoformat()
+    } for notif in notifications])
+
+@app.route('/api/notifications/<int:notif_id>/read', methods=['PUT'])
+@jwt_required()
+def mark_notification_read(notif_id):
+    notification = Notification.query.get_or_404(notif_id)
+    notification.read = True
+    db.session.commit()
+    return jsonify({'message': 'Notificação marcada como lida'})
 
 if __name__ == '__main__':
     app.run(debug=True)
