@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Gestion Salud/Empresas </title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Sistema Contábil</title>
+    <link rel="stylesheet" href="./styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -12,7 +12,7 @@
         <!-- Tela de Login -->
         <div id="login-screen" class="screen active">
             <div class="login-container">
-                <h2><i class="fas fa-chart-line"></i> Gestion Salud/Empresas </h2>
+                <h2><i class="fas fa-chart-line"></i> Sistema Contábil</h2>
                 <form id="login-form">
                     <div class="form-group">
                         <input type="text" id="username" placeholder="Usuário" required>
@@ -35,6 +35,23 @@
                 </div>
                 <div class="header-right">
                     <span id="user-info"></span>
+                    
+                    <!-- Botão de Notificações -->
+                    <div class="notifications-container">
+                        <button id="notifications-btn" class="btn btn-secondary">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="notification-badge">0</span>
+                        </button>
+                        <div id="notifications-dropdown" class="notifications-dropdown">
+                            <div class="notifications-header">
+                                <h4>Notificações</h4>
+                            </div>
+                            <div id="notifications-list" class="notifications-list">
+                                <!-- Notificações carregadas via JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button id="logout-btn" class="btn btn-secondary">Sair</button>
                 </div>
             </header>
