@@ -431,6 +431,104 @@ tr:hover {
     width: auto;
 }
 
+/* Notifications */
+.notifications-container {
+    position: relative;
+    display: inline-block;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    min-width: 18px;
+    text-align: center;
+    display: none;
+}
+
+.notifications-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.notifications-dropdown.show {
+    display: block;
+}
+
+.notifications-header {
+    padding: 15px;
+    border-bottom: 1px solid #ecf0f1;
+    background: #f8f9fa;
+}
+
+.notifications-header h4 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.notifications-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 15px;
+    border-bottom: 1px solid #ecf0f1;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notification-item.unread {
+    background: #e8f4fd;
+    border-left: 3px solid #3498db;
+}
+
+.notification-item .notification-message {
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.notification-item .notification-time {
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+.notification-item .notification-actions {
+    margin-top: 5px;
+}
+
+.mark-read-btn {
+    background: none;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+}
+
+.mark-read-btn:hover {
+    text-decoration: underline;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
@@ -452,5 +550,16 @@ tr:hover {
     .upload-section {
         flex-direction: column;
         align-items: stretch;
+    }
+    
+    .notifications-dropdown {
+        width: 300px;
+        right: -50px;
+    }
+    
+    .header-right {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-end;
     }
 }
